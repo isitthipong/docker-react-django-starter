@@ -1,0 +1,395 @@
+Full-stack Software Development Standards and Guidelines
+Revisions
+Date	Author	Note
+2026-05-04	Juti Noppornpitak	First draft
+		
+2026-06-04	Juti Noppornpitak	Added “Technical Design Assessment Guideline”.
+Added “Object Calisthenics”.
+2026-06-29	Juti Noppornpitak	Naming convention for classes in Python
+2026-08-18	Juti Noppornpitak	Replaced and updated “Is the document applicable to you or your work?” with “Review and Compliance”
+2026-08-31	Juti Noppornpitak	PHP is now only approved for production use after extensive security review.
+2026-08-31	Stefan Mairhofer	Reviewed and Approved
+2026-09-15	Juti Noppornpitak	Added ES256, PS256, and HS256 as conditionally acceptable cryptographic algorithms
+
+Before getting started
+As we try to keep this document as lean as possible, this document relies on RFC 2119 to describe the keywords used in technical documents, such as “MUST”, “MUST NOT”, “SHOULD”, “REQUIRED”, etc.
+Please be aware while “SHOULD” implies suggestion, we MUST try to follow it unless there is a good justification for deviation.
+ 
+Introduction
+What is full-stack software development?
+Full stack software development means building both the frontend and backend parts of an application.
+1. Frontend (“client side”)
+This is what users see and interact with.
+•	Examples: website layout, buttons, forms, animations
+•	Common technologies: 
+o	HTML (structure)
+o	CSS (design)
+o	JavaScript (interactivity)
+o	Frameworks like React, Angular, Vue
+o	Terminal/CLI app
+2. Backend (“server side”)
+This handles the logic, data, and processing behind the scenes.
+•	Examples: user authentication, databases, APIs
+•	Common technologies: 
+o	Languages: Node.js, Python, Java, C#
+o	Databases: MySQL, PostgreSQL, MongoDB
+o	Servers & APIs
+3. What a full-stack developer does
+A full stack developer can:
+•	Build the user interface (UI)
+•	Create and manage databases
+•	Write server side logic
+•	Connect frontend with backend (via APIs)
+•	Deploy and maintain applications
+Review and Compliance
+Rationale
+This document is to ensure the continuity, maintainability, and security of the software developed in-house and ensure that the software follows the industrial standards.
+Compliance
+This document applies to any traditional software development projects, i.e., high-code software development, under one or many of any following conditions:
+•	Two or more users use the software.
+•	The software is reusable regardless of planned or unplanned customization.
+•	The software interacts with networks, e.g., connecting to database servers, cloud storage, message-queue/pub-sub services, ERBs, APIs.
+•	The software handles internal data, including the current data or a snapshot.
+Review Process
+To ensure compliance with the final product, there will be two sets of discussion-style review sessions: software architecture review and code review.
+Software Architecture Review
+What we focus on in this review are:
+•	Software Architectural Design, e.g., Class Diagrams, Procedural Flows
+•	Data Structure Design, e.g., Entity Relational Diagram
+•	Software Dependencies, e.g., Compilers/Interpreters/Runtimes, RDS Type and Version
+•	Application Security Design, e.g., Authentication and Authorization, Data Protection
+A software architectural review session will be conducted by at least one senior full-stack software developer (or anyone with similar qualification) from DDAI as a primary reviewer.
+The reviewers are responsible for the sign-off before the implementation phase.
+Code Review
+A code review session will be conducted by at least one senior full-stack software developer (or anyone with similar qualification) from DDAI. The final product must follow the standards and guidelines mentioned.
+The participated DDAI developers are responsible for the sign-off before the deployment.
+Checklist
+General checklist
+Comply with the standards and compliance requirements where they apply to the software in all states, e.g., Proof of Concept, SIT, UAT, Production, with two exceptions.
+•	Security requirements can be bypassed with the consent of the head of security.
+•	Code-maintainability requirements can be bypassed with the consent of the head of DDAI.
+In addition, software development conventions and practices mentioned in this document always apply to new changes, including the affected code or components.
+Security checklist
+Comply with “Application Security” (mentioned later in this document).
+•	In addition, the code MUST NOT contain classic security risks, such as possible unauthorized access, unprotected sensitive data, code injection, SQL injection, remote execution, etc.
+•	All existing software MUST pass the application security review both before and after implementation.
+•	All programs not developed by the DDAI HCD team are subject to extensive review by at least one senior full-stack developer.
+Existing software
+•	If existing software has never been reviewed before, it MUST pass the extensive review before implementing changes or the next deployment.
+
+
+
+
+ 
+Summary of Standard Tools and Restrictions
+Tool	1st-tier Support	2nd-tier Support	Legacy Support
+IDEs	IntelliJ/PyCharm
+Visual Studio Code	Antigravity
+VIM	Visual Studio
+Backend Programming Languages	Python	Java
+JavaScript/TypeScript	C#
+PHP
+Backend Frameworks	FastAPI
+Flask
+Django	Spring Framework
+Express.js	-
+Frontend Programming Languages	TypeScript/JavaScript	-	-
+
+Frontend Frameworks	Angular	React.js	Vue.js
+
+Databases	PostgreSQL
+BigQuery	SQL Server
+SharePoint List	-
+RDS Library	SQLAlchemy 
+Django ORM	-	-
+Coding with DBs	Prepared Statement	ORM	-
+Message Queues	Kafka
+Redis
+RabbitMQ	Amazon SNS
+Azure Service Bus
+Cloud Pub/Sub	-
+Cache	Redis
+	-	-
+Cloud Storage	Azure Blob Container
+Google Cloud Storage	MinIO (Dev)
+Azurite (Dev)
+-
+Containerization Support	Docker
+Kubernetes	-	-
+OIDC Provider	Entra ID	Keycloak (Dev)	-
+Versioning Controls	GIT	-	-
+Merging and Conflict Resolution Strategies	Rebase ONLY	-	-
+
+ 
+Common Practices
+This section outlines the guidelines and standards for all backend services, including API services, ELT/ETL services, and serverless applications.
+-	Software Design, Coding Convention and Style
+-	The architects, designers, and developers must follow the coding standards or guidelines for a particular technology, framework, toolsets, or programming languages, first before applying common practices.
+o	Please note that these coding guidelines/standards usually include topics, such as naming conventions and design practices (error handling).
+o	While anyone may opt to break a rule or two, he or she must have justification which must be approved by collective consensus or the HCD lead BEFORE making an exception.
+-	When possible, an app should be runnable on any machine, especially on any POSIX-compatible operating systems, such as Debian, Ubuntu, etc.
+o	The dependency apps must be either runnable on the local machine (in isolation) or at least accessible from the workplace.
+o	If the direct alternatives aren’t available, a comparable app can be used.
+	Example: Use MinIO or Azurite in lieu of Azure Blob Container.
+	Example: Use Kafka directly in lieu of Azure Event Hub’s Kakfa-compatible API.
+-	Configurable at runtime.
+-	Deployable as containers.
+-	Naming Convention
+o	By default, the name of any code references, such as variables, classes, and modules, must be descriptive.
+o	No abbreviations or short phases are allowed unless it is a commonly known, e.g., “max” for “maximum” and “min” for “minimum”.
+o	No generic name, such as “i”, “j”, “x”, “y”, and “n”, is allowed.
+	The exception is granted only for very short code blocks, such as small loop or small anonymous function.
+o	When able, order variables in alphanumeric order for consistency.
+-	Software Design
+o	The code SHOULD follow the SOLID principles. (Maintainability)
+	Source: https://en.wikipedia.org/wiki/SOLID
+o	The code SHOULD follow the Twelve-Factor App methodology. (Cloud-native, Configurability)
+	Source: https://en.wikipedia.org/wiki/Twelve-Factor_App_methodology
+o	The code structure MUST be domain-driven. (Flexibility)
+o	The code SHOULD follow the Object Calisthenics.
+	See more explanation below.
+o	The code must be properly documented.
+	At the minimum, the readme should provide instructions on environment setup, app startup and shutdown, test automation, etc. for testing and development.
+	The name of references in the code, e.g., classes, interfaces, constants, variables, properties, etc., must be descriptive or readable.
+o	Pre-emptive optimization is strongly discouraged. (Over-engineering)
+o	Caching is strongly discouraged. (Over-engineering)
+o	Stateful objects or apps are strongly discouraged. (Portability and Scalability)
+o	No direct or indirect circular dependency.
+	This applies to how we manage dependencies within either the same code base (intra-service) or between services (inter-service).
+o	Magic values, such as magic strings and magic numbers, are disallowed.
+o	All HTTP servers must respond any requests less than 20 seconds due to the default firewall rules.
+	This is the hard limit. Non-negotiable.
+o	Effective on 2026-05-13, all applications must at least provide REST APIs.
+	When applicable, an app must enhance the AI tools with MCP.
+-	The code must follow all security requirements.
+-	All code must be testable with test automation tools.
+o	While this does not imply that a product must have an accompanying test suite, the product should still have it.
+-	The supported versions of the corresponding interpreter/compiler/runtime are either the versions available in main repositories of Debian/Ubuntu/Fedora (e.g. Python 3.11 for Debian 12) or the current/LTS versions for long-term support.
+Object Calisthenics
+Object Calisthenics is a set of 9 coding exercises for object-oriented programming that enforce strict constraints to improve code design. The goal is to strengthen fundamental practices such as encapsulation, readability, and maintainability by forcing developers to rethink how objects are structured and interact. It is not a mandatory standard, but a training technique to build better coding habits.
+At Thai Union, we recommend developers to use Object Calisthenics whenever possible.
+We only apply this when applicable.
+Simplified Rules
+1.	Keep methods simple
+a.	Use only one level of indentation
+b.	Split complex logic into smaller methods
+2.	Avoid complex branching
+a.	Do not use “else”
+b.	Prefer early returns or polymorphism
+c.	Exception: In complex code, the use of “else” is permitted when it improves the clarity of the logic.
+3.	Model domain concepts explicitly
+a.	Wrap primitives (e.g., string, number) into meaningful objects
+4.	Encapsulate data and behavior
+a.	Avoid exposing internal state via getters/setters
+b.	Let objects handle their own logic (“tell, don’t ask”)
+5.	Reduce coupling between objects
+a.	Avoid chaining multiple method calls (one dot per line)
+6.	Use clear and meaningful names
+a.	Do not abbreviate variables, methods, or classes
+7.	Keep classes small and focused
+a.	Each class should have a single responsibility
+8.	Prefer composition over large objects
+a.	Limit number of fields per class
+b.	Break complex objects into smaller ones
+9.	Treat collections as domain objects
+a.	Encapsulate collections in dedicated classes when they have behavior
+References
+•	Bay, J. (2008). Object Calisthenics. In R. Parsons et al. (Eds.), The ThoughtWorks Anthology: Essays on Software Technology and Innovation. Pragmatic Bookshelf.
+•	Stakater. (n.d.). Object Calisthenics – Developer Handbook. Retrieved from https://developerhandbook.stakater.com/architecture/object-calisthenics.html
+•	Schluter, H. (2025). Object Calisthenics: A Way to Exercise Your Code. Medium. Retrieved from https://medium.com/@schluters/object-calisthenics-a-way-to-exercise-your-code-381e7a63e38f
+•	Filipov, M. (2025). Develop Better Code with Object Calisthenics. Medium. Retrieved from https://medium.com/@marcelo.filipov/develop-better-code-with-object-calisthenics-844bada82d5a
+•	bobuss. (2024). The 9 Rules of Object Calisthenics. GitHub Gist. Retrieved from https://gist.github.com/bobuss/6534934
+ 
+Backend Development
+Python
+-	Based on PEP 8.
+o	The only acceptable code formatters are the default formatter of IntelliJ/PyCharm and Visual Studio Code (black).
+o	Type hints are mandatory.
+o	Trailing commas are highly recommended.
+-	The supported version is from 3.11 (or the version available in Debian) to the current/LTS version.
+-	The supported database libraries are SQLAlchemy or Django’s ORM.
+-	An abstract class should inherit abc.ABC and its name starts with “Base” for an abstract class with default functionality or “I” for an abstract class without any default functionality (pseudo interface), e.g., BaseProcessor, ICloudStorage.
+Java
+-	Based on Google Java Style Guide.
+o	The only acceptable code formatters are the default formatter of IntelliJ.
+-	The supported version is the last two LTS versions.
+o	As of writing, those are Java 21 and Java 25.
+-	The supported SDKs and runtimes are Amazon-built or Eclipse-built.
+-	The ONLY supported framework is Spring Boot (the latest version).
+-	Strictly used for development where running Python code is not practical.
+-	An abstract or interface class should have its name starts with “Base” or “I” respectively, e.g., public abstract class BaseProcessor, public interface ICloudStorage.
+SQL
+The followings apply to any SQL dialects, e.g., PostgreSQL and BigQuery.
+-	Use the upper case for all reserved keywords, such as SELECT, FROM, WHERE, JOIN, etc.
+-	If the statement is complex, write the statement in multi-line.
+-	When the code manually constructs in a code, the code must wrap the query in a prepared statements before executing the query. (Security)
+-	The use of ENUM is prohibited.
+-	Only add foreign keys when necessary.
+o	We value flexibility in schema management.
+o	However, when a non-unique index on is required on that foreign key-ish column, then we will consider to either add a non-unique index for that column or make it a foreign key.
+-	Only add indexes when necessary.
+o	You SHOULD not pre-optimize the performance.
+-	Unless the framework provides a migration tool, please use Liquibase for schema and data migration.
+o	Refrain from inventing a custom solution.
+-	Naming Convention
+o	Use snake case, lowercase only.
+o	Avoid escaping quotes.
+o	Avoid reserved keywords.
+o	The table name can be singular or plural.
+	The preference has not been decided at the time of writing.
+o	Non-unique index names MUST start with “idx_”, followed by the table name and indexed columns, for example, idx_customers_country.
+o	Unique index names MUST start with “uidx_”, followed by the table name and indexed columns, for example, uidx_customers_name.
+o	Primary key names MUST start with “pk_”, followed by the table name and indexed columns, for example, pk_customers_id.
+o	Foreign key names MUST start with “fk_”, followed by the table name and indexed columns, for example, fk_customers_staff_id.
+
+ 
+Frontend Development
+UX Design
+-	The general design principles are based on Dieter Rams’ Ten Principles of Good Design.
+o	Here is the list of adopting principles.
+	Good design makes a product useful
+	Good design is aesthetic
+	Good design makes a product understandable
+	Good design is unobtrusive
+	Good design is honest
+	Good design is long-lasting
+	Good design is thorough down to the last detail
+	Good design is as little design as possible
+-	The clickable objects must have the descriptive label.
+o	Icons are generally used as complementary.
+-	The tooltip is required when labels and descriptions are not practical.
+-	By default, the default colour palette is monochrome.
+o	The use of any non-monochrome colours is limited to specific cases.
+o	The colourful palette will be provided in the base code. The prototype is in Jarvis (gic-jarvis).
+JavaScript/TypeScript
+-	Based on Google Style Guide.
+o	The only acceptable code formatters are the default formatter of IntelliJ and Visual Studio Code.
+o	Trailing commas are highly recommended.
+-	The supported version is from 20 to the LTS version.
+-	The supported frameworks are Angular 20+ and React.js.
+o	Angular will be our first choice.
+-	Strictly used for frontend development or serverless application development where running Python code is not practical.
+-	An (pseudo) abstract or interface class should have its name starts with “Base” or “I” respectively, e.g., class BaseProcessor, interface ICloudStorage.
+HTML/CSS
+-	Semantic HTML
+-	The class name must be snake-case.
+o	Only for React.js apps, the class name can be camel-case.
+-	Keep the CSS selectors as compact as possible.
+-	Use CSS variables instead of hard-coding property values by default.
+-	In-line styling is acceptable for simple presentation.
+ 
+Application Security
+Cryptography
+Use Case	Weakest Algorithm	Recommended Algorithms
+Sensitive information where it is stored securely but requires to be decrypted when needed.	RSA256 (RFC 6750)	ECDSA (P-256 + SHA-256)
+Compute hash for data verification	SHA256	(Same)
+Compute hash for quick in-memory computation	SHA1	SHA256
+Password Hashing	Argon2 (RFC 9106)	(Same)
+Bearer Tokens (JWT)	RSA256 (RFC 6750)	ECDSA (P-256 + SHA-256)
+For undocumented use cases, please discuss with the technical lead or team lead.
+Encoding / Data Serialization
+Use Case	Encoding Algorithm
+Sensitive data, e.g., PII, access tokens	JWT 
+Non-sensitive data	base64
+Communication between client and API	JSON for REST API
+Protocol Buffer for gPRC
+In addition, AVRO and Thrift are also acceptable if the underlying frameworks or libraries require.
+Authentication
+All applications must authenticate the clients with Entra ID.
+Use Case	Allowed Grant Types
+Authenticate users for a web application.	Authorization Grant
+Authenticate users for a Desktop client, Mobile client, or CLI.	Device Authorization Grant (RFC 8628)
+Authenticate a program for service-to-service communication	Client Credentials
+For undocumented use cases, please discuss with the HCD lead.
+Note: The plain-password authentication with application’s local user database is ONLY allowed during SIT and UAT. However, this DOES NOT imply that the password can be stored unencrypted.
+Authorization
+All API authorizations rely on a bearer token in the JWT format. Each token must clearly state the subject, audience, expiration, and scopes. The TTL of each token is depending on the use cases. Please consult with the table below.
+Use Case	Recommended TTL	Max Allowed TTL
+A bearer token on behalf of user	4 hours	12 hours
+A bearer token on behalf of service
+- As the token usually permits to perform tasks that require privileged permissions, we would like to ensure that the token expire as quickly as possible to reduce the chance of the token being intercepted.	15 minutes	2 hours
+A temporary access token
+- As the token can be visible in unsecure manner, the token should be expired as quickly as possible.	10 seconds	5 minutes
+ 
+Versioning and releasing classification
+Release classification
+To have the same understanding when we say a release candidate or an alpha release, this section will clarify the classification we use here and the associated minimum expectation.
+Classification	Short Code (if needed)	Stability	Maintainability	Testability (AUTO)	Use Cases
+Snapshot	snapshot / dev / d	N/A	N/A	N/A	Feature Preview, Demo
+Alpha / Snapshot	a	Low	Low	Low	Feature Preview, Demo
+Beta / Testing	b	Medium	Medium	Low	SIT
+Release Candidate	rc	High	High	Medium	UAT
+FINAL / Stable	final	High	High	High	Production
+
+Semantic versioning
+For this type of versions, we generally follow the standard semantic versions (link), e.g., v1.2.3 and v1.2.4rc1.
+Versioning with release timestamp
+We use the ISO date, then follow by the release classification.
+•	Pattern: vYYYYMMDD-FINAL
+o	YYYY is the current year.
+o	MM is the current month.
+o	DD is the current date.
+•	Example: v20260528-FINAL is the version of the final release.
+When a version/tag is duplicated, just add the patch number described in semantic versioning.
+•	Pattern: vYYYYMMDD-PPP-FINAL
+o	YYYY is the current year.
+o	MM is the current month.
+o	DD is the current date.
+o	PPP is the ZERO-padded patch number.
+•	Example: v20260528-017-FINAL is the 17th patch release of version 2026-05-28.
+Choose the right scheme
+Use Case	Semantic Versioning (link)
+Versioning with Release Timestamp
+Release on regular schedule, e.g., daily, weekly, monthly, quarterly, annually	❌	✔️
+Release as a snapshot, i.e., a package built by the CI/CD workflow	❌	✔️
+Release on demand, e.g., beta release, release candidate, stable release, technical preview, etc.	✔️ (preferred)	✔️
+
+ 
+Technical Design Assessment Guideline
+As we have a lot of options to solve certain problems or situations, we would like to ensure that we have all considered potential/actual use cases or factors in decision making.
+Quick Solution Design Matrix
+This matrix provides additional guidance for selecting among tools when more than one option is available. When multiple options exist, those shown in bold are preferred and MUST be the first choice unless there is a valid justification for deviation.
+Use Case	Options	Options	Note
+	Emergency
+Short dev cycle, small features, low traffic, usage, or complexity	Regular
+At least medium dev cycle, features, traffic, usage, or complexity	
+Backend Programming Language
+Build an app	Python	Python	-
+Build an app interacting with SAP OData API directly	Java	Java	SAP OData library does not seem to be available or officially maintained by Oracle.
+Build a serverless app	Python
+JavaScript	Python	JavaScript is allowed for a very simple application.
+Deployment Style
+Deployment Style	Serverless	Kubernetes	The serverless style is more suitable for infrequently used apps
+Framework or Pattern
+UI Development	Angular
+React	Angular	-
+API/Backend Development	Django*
+	FastAPI
+Flask
+Django	Any lightweight frameworks for the target platform are also allowed.
+Data Processing	A Set of Signal-based Cloud Functions	Custom Signal-based App*	Currently, we don’t have preference on the framework. Just relies on MQ-based apps.
+Concurrency Pattern
+Build a web app	Cooperative Multitasking
+Multi-threading	Cooperative Multitasking	This is for high responsive rate.
+Build a non-user-facing app	Multi-threading
+Cooperative Multitasking
+Distributed Computing	Multi-processing
+Multi-threading
+Cooperative Multitasking
+Distributed Computing	-
+Database
+Handle small-to-moderate amount of data	PostgreSQL	PostgreSQL	-
+Handle large amount of data	BigQuery	BigQuery	-
+Connect to PostgreSQL in a Django app	Django ORM	Django ORM	-
+Connect to PostgreSQL in a non-Django app	SQLAlchemy	SQLAlchemy	-
+Message Queues
+Fast Response	-	Kafka	Kafka is our go-to message queue platform.
+Flexible Message Exchange Types (direct, fanout, topic, built-in dead letter queue)	-	RabbitMQ	-
+Build an app with simple Pub/Sub functionality.	Amazon SNS
+Azure Service Bus
+Google Cloud Pub/Sub	Redis	-
+Cloud Storage
+Deploy on Azure.	Azure Blob Container	Azure Blob Container	-
+Deploy on GCP or directly share data with the apps on GCP.	Google Cloud Storage	Google Cloud Storage	-
+Deploy on AWS.	Amazon S3	Amazon S3	-
+
