@@ -33,6 +33,12 @@ const APP_VARIANTS = [
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api";
 
+const getCookie = (name) => {
+  const cookies = document.cookie.split("; ");
+  const cookie = cookies.find((item) => item.startsWith(`${name}=`));
+  return cookie ? decodeURIComponent(cookie.split("=")[1]) : "";
+};
+
 function App() {
   const [selectedKey, setSelectedKey] = useState("products");
   const [records, setRecords] = useState([]);
@@ -44,6 +50,18 @@ function App() {
   const [error, setError] = useState("");
 
   const currentApp = APP_VARIANTS.find((item) => item.key === selectedKey) ?? APP_VARIANTS[0];
+
+  const ensureCsrfToken = async () => {
+    let token = getCookie("csrftoken");
+    if (token) return token;
+
+    const response = await fetch(`${API_BASE}/csrf/`, { credentials: "same-origin" });
+    if (!response.ok) throw new Error(`Unable to initialize CSRF protection (HTTP ${response.status})`);
+
+    token = getCookie("csrftoken");
+    if (!token) throw new Error("Unable to initialize CSRF protection");
+    return token;
+  };
 
   const fetchRecords = async () => {
     setLoading(true);
@@ -142,9 +160,11 @@ function App() {
     try {
       const method = editingId ? "PUT" : "POST";
       const url = editingId ? `${API_BASE}/${selectedKey}/${editingId}/` : `${API_BASE}/${selectedKey}/`;
+      const csrfToken = await ensureCsrfToken();
       const response = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken },
         body: JSON.stringify(payload),
       });
 
@@ -171,7 +191,12 @@ function App() {
     if (!window.confirm("Are you sure you want to delete this item?")) return;
 
     try {
-      const response = await fetch(`${API_BASE}/${selectedKey}/${id}/`, { method: "DELETE" });
+      const csrfToken = await ensureCsrfToken();
+      const response = await fetch(`${API_BASE}/${selectedKey}/${id}/`, {
+        method: "DELETE",
+        credentials: "same-origin",
+        headers: { "X-CSRFToken": csrfToken },
+      });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       await fetchRecords();
       if (editingId === id) resetForm();
