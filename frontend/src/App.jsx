@@ -32,6 +32,7 @@ const APP_VARIANTS = [
 ];
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api";
+const APPLITIZER_URL = new URL("./Applitizer/ingredient-analyzer v3.html", import.meta.url).href;
 
 const getCookie = (name) => {
   const cookies = document.cookie.split("; ");
@@ -246,6 +247,9 @@ function App() {
               {item.name}
             </button>
           ))}
+          <a className="nav-item nav-link" href={APPLITIZER_URL} target="_blank" rel="noreferrer">
+            Applitizer
+          </a>
           <button className="nav-item">CRUD</button>
           <button className="nav-item">Filter</button>
           <button className="nav-item">Report</button>
@@ -274,6 +278,9 @@ function App() {
                 {item.name}
               </button>
             ))}
+            <a className="main-menu-item main-menu-link" href={APPLITIZER_URL} target="_blank" rel="noreferrer">
+              Applitizer
+            </a>
           </nav>
 
           <div className="topbar-actions">

@@ -1,0 +1,1654 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>เครื่องวิเคราะห์สัดส่วนวัตถุดิบ — Ingredient Mix Analyzer</title>
+<style>
+  :root{
+    --bg:#EEF1EF;
+    --panel:#FFFFFF;
+    --ink:#16242C;
+    --ink-soft:#5A6B70;
+    --line:#D7DFDD;
+    --line-soft:#E6ECEA;
+    --accent:#1F5C73;
+    --accent-ink:#0F3A4B;
+    --accent-soft:#DCEAEC;
+    --warn:#B44B2E;
+    --chicken:#D79A5E;
+    --potato:#E7DCB4;
+    --pea:#7E8B3A;
+    --carrot:#DD7A2E;
+    --bgclass:#5B7480;
+    --radius:10px;
+    --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+    --sans: -apple-system, "Segoe UI", "Noto Sans Thai", "Helvetica Neue", Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:14.5px;
+    line-height:1.5;
+  }
+  header{
+    background:var(--accent-ink);
+    color:#fff;
+    padding:18px 22px 0 22px;
+  }
+  header h1{
+    margin:0 0 2px 0;
+    font-size:19px;
+    font-weight:700;
+    letter-spacing:0.2px;
+  }
+  header p{
+    margin:0 0 14px 0;
+    color:#BFD6DC;
+    font-size:12.5px;
+    max-width:640px;
+  }
+  .tabs{
+    display:flex;
+    gap:2px;
+  }
+  .tab-btn{
+    background:transparent;
+    border:none;
+    color:#BFD6DC;
+    padding:10px 18px;
+    font-size:14px;
+    font-family:var(--sans);
+    cursor:pointer;
+    border-radius:8px 8px 0 0;
+  }
+  .tab-btn.active{
+    background:var(--bg);
+    color:var(--ink);
+    font-weight:600;
+  }
+  main{
+    max-width:1320px;
+    margin:0 auto;
+    padding:20px;
+  }
+  .view{display:none;}
+  .view.active{display:block;}
+  .layout{
+    display:grid;
+    grid-template-columns:320px 1fr;
+    gap:18px;
+    align-items:start;
+  }
+  @media (max-width:880px){
+    .layout{grid-template-columns:1fr;}
+  }
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:16px;
+  }
+  .panel + .panel{margin-top:16px;}
+  .panel h2{
+    font-size:13px;
+    text-transform:none;
+    margin:0 0 12px 0;
+    color:var(--accent-ink);
+    font-weight:700;
+    border-bottom:1px solid var(--line-soft);
+    padding-bottom:8px;
+  }
+  label{
+    display:block;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin:12px 0 5px 0;
+  }
+  label:first-of-type{margin-top:0;}
+  input[type=text], input[type=number], select{
+    width:100%;
+    padding:8px 9px;
+    border:1px solid var(--line);
+    border-radius:7px;
+    font-family:var(--sans);
+    font-size:13.5px;
+    background:#fff;
+    color:var(--ink);
+  }
+  input[type=file]{
+    width:100%;
+    font-size:12.5px;
+  }
+  input[type=range]{width:100%;}
+  .range-row{display:flex;align-items:center;gap:8px;}
+  .range-row output{
+    font-family:var(--mono);
+    font-size:12.5px;
+    color:var(--accent-ink);
+    min-width:34px;
+    text-align:right;
+  }
+  button{
+    font-family:var(--sans);
+    cursor:pointer;
+  }
+  .btn{
+    display:inline-block;
+    width:100%;
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    padding:10px 12px;
+    border-radius:7px;
+    font-size:13.5px;
+    font-weight:600;
+    margin-top:14px;
+  }
+  .btn:disabled{background:#A9BDC2;cursor:not-allowed;}
+  .btn.secondary{
+    background:transparent;
+    color:var(--accent-ink);
+    border:1px solid var(--line);
+    font-weight:500;
+  }
+  .btn.small{
+    width:auto;
+    padding:6px 10px;
+    font-size:12px;
+    margin-top:0;
+  }
+  .btn-row{display:flex;gap:8px;margin-top:10px;}
+  .btn-row .btn{margin-top:0;}
+  .status{
+    font-size:12px;
+    color:var(--ink-soft);
+    margin-top:10px;
+    min-height:14px;
+  }
+  .status.err{color:var(--warn);}
+  .hint{
+    font-size:11.5px;
+    color:var(--ink-soft);
+    margin-top:6px;
+    line-height:1.45;
+  }
+  .canvas-wrap{
+    display:flex;
+    gap:14px;
+    flex-wrap:wrap;
+  }
+  .canvas-card{
+    flex:1;
+    min-width:280px;
+  }
+  .canvas-card h3{
+    font-size:12px;
+    color:var(--ink-soft);
+    margin:0 0 6px 0;
+    font-weight:600;
+  }
+  canvas{
+    max-width:100%;
+    background:#fafafa;
+    border:1px solid var(--line);
+    border-radius:8px;
+    display:block;
+  }
+  table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:6px;
+    font-size:13px;
+  }
+  th,td{
+    text-align:left;
+    padding:8px 10px;
+    border-bottom:1px solid var(--line-soft);
+  }
+  th{
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.3px;
+    color:var(--ink-soft);
+    font-weight:600;
+  }
+  td.num, th.num{
+    font-family:var(--mono);
+    text-align:right;
+  }
+  .swatch{
+    display:inline-block;
+    width:11px;height:11px;
+    border-radius:3px;
+    margin-right:7px;
+    vertical-align:-1px;
+    border:1px solid rgba(0,0,0,0.15);
+  }
+  tfoot td{
+    font-weight:700;
+    border-top:1.5px solid var(--ink);
+    border-bottom:none;
+  }
+  .class-buttons{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+  }
+  .class-btn{
+    flex:1 1 calc(50% - 6px);
+    border:2px solid transparent;
+    border-radius:7px;
+    padding:8px 8px;
+    font-size:12.5px;
+    font-weight:600;
+    color:#fff;
+    text-align:left;
+    background:var(--ink-soft);
+    position:relative;
+  }
+  .class-btn.active{border-color:var(--ink);box-shadow:0 0 0 2px #fff inset;}
+  .class-btn small{display:block;font-weight:400;font-size:10.5px;opacity:0.85;}
+  .sample-counts{
+    font-family:var(--mono);
+    font-size:12px;
+    margin-top:10px;
+    display:grid;
+    grid-template-columns:1fr auto;
+    row-gap:4px;
+  }
+  .add-class-row{
+    display:flex;
+    gap:6px;
+    align-items:stretch;
+  }
+  .add-class-row input{flex:2;}
+  .add-class-row select{flex:1.5;}
+  .add-class-row button{flex:0 0 auto;margin-top:0;}
+  .model-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    padding:8px 0;
+    border-bottom:1px solid var(--line-soft);
+    font-size:12.5px;
+  }
+  .model-row:last-child{border-bottom:none;}
+  .model-row .name{font-weight:600;}
+  .model-row .meta{color:var(--ink-soft);font-size:11px;}
+  .model-row .actions{display:flex;gap:6px;}
+  .badge{
+    display:inline-block;
+    background:var(--accent-soft);
+    color:var(--accent-ink);
+    font-size:10.5px;
+    padding:1px 6px;
+    border-radius:20px;
+    margin-left:6px;
+  }
+  .empty-note{
+    color:var(--ink-soft);
+    font-size:12.5px;
+    padding:8px 0;
+  }
+  .divider{
+    height:1px;
+    background:var(--line-soft);
+    margin:14px 0;
+  }
+  .footer-note{
+    max-width:1320px;
+    margin:8px auto 30px auto;
+    padding:0 20px;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    line-height:1.6;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>เครื่องวิเคราะห์สัดส่วนวัตถุดิบ</h1>
+  <p>วิเคราะห์ภาพถาดตัวอย่างวัตถุดิบ นับจำนวนชิ้นและคำนวณสัดส่วนน้ำหนักของแต่ละชนิด — เพิ่ม/ลบชนิดวัตถุดิบได้เอง และตั้งพื้นหลังที่ไม่ต้องการนับได้หลายชนิด (background1, background2, ...) ทำงานแบบออฟไลน์ทั้งหมดในเบราว์เซอร์ ไม่ส่งข้อมูลออกไปที่ใด</p>
+  <div class="tabs">
+    <button class="tab-btn active" id="tabBtnAnalyze" data-view="analyze">วิเคราะห์ภาพ</button>
+    <button class="tab-btn" id="tabBtnTrain" data-view="train">เทรนโมเดล</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- ===================== ANALYZE VIEW ===================== -->
+  <section class="view active" id="view-analyze">
+    <div class="layout">
+      <div>
+        <div class="panel">
+          <h2>1. ภาพและโมเดล</h2>
+
+          <label for="analyzeFileInput">ภาพถาดตัวอย่าง</label>
+          <input type="file" id="analyzeFileInput" accept="image/*">
+
+          <label for="modelSelect">โมเดลสี (จากการเทรน)</label>
+          <select id="modelSelect"></select>
+
+          <label for="minAreaOverride">พื้นที่ขั้นต่ำต่อ 1 ชิ้น (px, กันสัญญาณรบกวน)</label>
+          <div class="range-row">
+            <input type="range" id="minAreaOverride" min="2" max="400" value="25">
+            <output id="minAreaOverrideOut">25</output>
+          </div>
+
+          <label for="procSize">ความละเอียดที่ใช้ประมวลผล</label>
+          <select id="procSize">
+            <option value="600">เร็ว (600px)</option>
+            <option value="900" selected>ปกติ (900px)</option>
+            <option value="1300">ละเอียด (1300px, ช้ากว่า)</option>
+          </select>
+
+          <label for="totalWeightInput">น้ำหนักรวมของถาดนี้ (กรัม) — ไม่บังคับ</label>
+          <input type="number" id="totalWeightInput" min="0" step="0.1" placeholder="เช่น 120">
+          <div class="hint">ถ้าใส่ค่านี้ โปรแกรมจะคำนวณน้ำหนักโดยประมาณของแต่ละวัตถุดิบ โดยถ่วงด้วยค่าน้ำหนักต่อพื้นที่ในข้อ 2</div>
+
+          <button class="btn" id="runAnalysisBtn" disabled>วิเคราะห์ภาพ</button>
+          <div class="status" id="analyzeStatus"></div>
+        </div>
+
+        <div class="panel">
+          <h2>2. น้ำหนักต่อพื้นที่ (density)</h2>
+          <div class="hint" style="margin-bottom:10px;">วัตถุดิบแต่ละชนิดหนักไม่เท่ากันต่อ 1 หน่วยพื้นที่ (เช่น แครอทหนากว่าไก่ฉีก) ปรับค่าตรงนี้เพื่อให้การคำนวณกรัมแม่นขึ้น — ค่าเป็นค่าสัมพัทธ์ ใช้ 1.00 เป็นฐาน ค่ามากขึ้น = หนักขึ้นต่อพื้นที่เท่ากัน</div>
+          <div id="densityList"></div>
+          <div class="btn-row">
+            <button class="btn secondary small" id="resetDensityBtn">คืนค่าเป็น 1.00 ทั้งหมด</button>
+          </div>
+
+          <div class="divider"></div>
+          <h2 style="border:none;padding:0;margin-bottom:8px;">ปรับเทียบค่าอัตโนมัติ (calibrate)</h2>
+          <div class="hint" style="margin-bottom:10px;">ถ้าเคยชั่งน้ำหนักจริงของแต่ละชนิดในภาพนี้ไว้ ให้กรอกกรัมจริงลงไป แล้วกดคำนวณ ระบบจะย้อนหาค่า density ที่ถูกต้องให้เอง (ต้องวิเคราะห์ภาพก่อน)</div>
+          <div id="calibrateList"><div class="empty-note">วิเคราะห์ภาพก่อน แล้วช่องกรอกน้ำหนักจริงจะขึ้นที่นี่</div></div>
+          <button class="btn" id="calibrateBtn" disabled>คำนวณค่า density จากน้ำหนักจริง</button>
+          <div class="status" id="calibrateStatus"></div>
+        </div>
+
+        <div class="panel">
+          <h2>3. ส่งออกผลลัพธ์</h2>
+          <button class="btn secondary" id="exportExcelBtn" disabled>ส่งออกเป็น Excel (.xls)</button>
+          <div class="hint">ไฟล์ที่ได้เปิดด้วย Microsoft Excel ได้โดยตรง หากมีข้อความเตือนเรื่องรูปแบบไฟล์ ให้เลือก "ใช่ / Yes" เพื่อเปิดตามปกติ</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="panel">
+          <h2>ภาพต้นฉบับ และผลการจำแนก</h2>
+          <div class="canvas-wrap">
+            <div class="canvas-card">
+              <h3>ต้นฉบับ</h3>
+              <canvas id="analyzePreviewCanvas"></canvas>
+            </div>
+            <div class="canvas-card">
+              <h3>ผลการจำแนกสี (ซ้อนทับ)</h3>
+              <canvas id="analyzeOverlayCanvas"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>สัดส่วนวัตถุดิบ</h2>
+          <canvas id="proportionChart" height="150"></canvas>
+          <table id="resultsTable">
+            <thead>
+              <tr>
+                <th>วัตถุดิบ</th>
+                <th class="num">จำนวนชิ้น</th>
+                <th class="num">พื้นที่ (px)</th>
+                <th class="num">สัดส่วนพื้นที่ (%)</th>
+                <th class="num">density</th>
+                <th class="num">สัดส่วนน้ำหนัก (%)</th>
+                <th class="num">น้ำหนักโดยประมาณ (g)</th>
+              </tr>
+            </thead>
+            <tbody id="resultsTableBody">
+              <tr><td colspan="7" class="empty-note">ยังไม่มีผลการวิเคราะห์ — อัปโหลดภาพแล้วกด "วิเคราะห์ภาพ"</td></tr>
+            </tbody>
+            <tfoot id="resultsTableFoot" style="display:none;">
+              <tr>
+                <td>รวม</td>
+                <td class="num" id="footCount"></td>
+                <td class="num" id="footArea"></td>
+                <td class="num">100.0</td>
+                <td class="num">—</td>
+                <td class="num">100.0</td>
+                <td class="num" id="footWeight"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== TRAIN VIEW ===================== -->
+  <section class="view" id="view-train">
+    <div class="layout">
+      <div>
+        <div class="panel">
+          <h2>1. ภาพสำหรับเทรน</h2>
+          <label for="trainFileInput">อัปโหลดภาพตัวอย่าง (ทำได้หลายภาพ / หลายสภาพแสง)</label>
+          <input type="file" id="trainFileInput" accept="image/*">
+          <div class="hint">วาดกรอบสี่เหลี่ยมล้อมรอบบริเวณที่เป็นสีของวัตถุดิบแต่ละชนิดบนภาพ เพื่อเก็บตัวอย่างสีไว้กำหนดช่วงสี (range) ยิ่งเทรนจากหลายภาพ/หลายสภาพแสง ยิ่งแม่นยำขึ้น</div>
+        </div>
+
+        <div class="panel">
+          <h2>2. เลือกชนิดที่กำลังวาดกรอบ</h2>
+          <div class="class-buttons" id="classButtons"></div>
+          <div class="btn-row">
+            <button class="btn secondary small" id="undoBoxBtn">ยกเลิกกรอบล่าสุด</button>
+            <button class="btn secondary small" id="clearBoxesBtn">ล้างกรอบทั้งหมด</button>
+          </div>
+          <div class="sample-counts" id="sampleCounts"></div>
+
+          <div class="divider"></div>
+          <label for="newClassName">เพิ่มชนิดใหม่</label>
+          <div class="add-class-row">
+            <input type="text" id="newClassName" placeholder="เช่น corn, background2">
+            <select id="newClassType">
+              <option value="counted">วัตถุดิบ (นับสัดส่วน)</option>
+              <option value="background">พื้นหลัง (ไม่นับ)</option>
+            </select>
+            <button class="btn small" id="addClassBtn">เพิ่ม</button>
+          </div>
+          <div class="hint">ชนิดที่ตั้งเป็น "พื้นหลัง" จะถูกตัดออกจากการคำนวณสัดส่วนเสมอ — ใช้สำหรับสีพื้นถาด เงา หรือป้ายกำกับ เพิ่มได้หลายชนิด เช่น background1, background2, background3</div>
+
+          <div class="divider"></div>
+          <div class="hint" style="margin-bottom:6px;">ชนิดทั้งหมดในระบบ (ใช้ร่วมกันทุกโมเดล):</div>
+          <div id="classManageList"></div>
+        </div>
+
+        <div class="panel">
+          <h2>3. บันทึกโมเดล</h2>
+          <label for="trainModelName">ชื่อโมเดล</label>
+          <input type="text" id="trainModelName" placeholder="เช่น แสงในโรงงาน A">
+
+          <label for="existingModelSelect">หรือโหลดโมเดลเดิมมาเทรนต่อ</label>
+          <select id="existingModelSelect">
+            <option value="">— เริ่มโมเดลใหม่ —</option>
+          </select>
+
+          <label for="trainMinArea">พื้นที่ขั้นต่ำต่อ 1 ชิ้น (px) ของโมเดลนี้</label>
+          <div class="range-row">
+            <input type="range" id="trainMinArea" min="2" max="400" value="25">
+            <output id="trainMinAreaOut">25</output>
+          </div>
+
+          <button class="btn" id="saveModelBtn">บันทึกโมเดล</button>
+          <div class="status" id="trainStatus"></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="panel">
+          <h2>วาดกรอบตัวอย่างสีบนภาพ</h2>
+          <div class="hint" style="margin-bottom:8px;">คลิกค้างแล้วลากบนภาพเพื่อวาดกรอบ — สีของกรอบจะตรงกับชนิดที่เลือกไว้ด้านซ้าย</div>
+          <canvas id="trainCanvas"></canvas>
+        </div>
+
+        <div class="panel">
+          <h2>โมเดลที่บันทึกไว้</h2>
+          <div id="savedModelsList"><div class="empty-note">ยังไม่มีโมเดลที่บันทึกไว้</div></div>
+          <div class="divider"></div>
+          <div class="btn-row">
+            <button class="btn secondary small" id="exportModelsBtn">ส่งออกโมเดลทั้งหมด (.json)</button>
+            <label class="btn secondary small" style="margin:0;display:inline-flex;align-items:center;justify-content:center;">
+              นำเข้าโมเดล (.json)
+              <input type="file" id="importModelsInput" accept="application/json" style="display:none;">
+            </label>
+          </div>
+          <div class="hint">แนะนำให้ส่งออกไฟล์ .json สำรองไว้เสมอ เพราะบางเบราว์เซอร์อาจไม่คงข้อมูล local storage ไว้เมื่อเปิดไฟล์ HTML นี้โดยตรงจากเครื่อง</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<div class="footer-note">
+  เครื่องมือนี้จำแนกวัตถุดิบจากช่วงสี (HSV) ที่เทรนไว้ ผลลัพธ์เป็นค่าประมาณจากพื้นที่พิกเซลของแต่ละชนิด ความแม่นยำขึ้นกับคุณภาพของการเทรนโมเดลให้เหมาะกับสภาพแสงและกล้องที่ใช้จริง ทำงานทั้งหมดในเบราว์เซอร์ของเครื่องนี้ ไม่มีการเชื่อมต่ออินเทอร์เน็ต
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------------------------------------------------------------
+  // Constants
+  // ---------------------------------------------------------------
+  var STORAGE_KEY = "ingredientAnalyzerModelsV1";
+  var CLASS_STORAGE_KEY = "ingredientAnalyzerClassDefsV1";
+
+  var COLOR_PALETTE = [
+    "#D79A5E","#C8B87A","#7E8B3A","#DD7A2E","#4C6FA5","#9B5DE5",
+    "#00A896","#E4572E","#8D6A9F","#B08968","#457B9D","#6A994E",
+    "#BC6C25","#5B7480","#8AA29E","#C06C84"
+  ];
+
+  var DEFAULT_CLASS_DEFS = [
+    {key:"chicken",     label:"ไก่ (chicken)",        counted:true,  color:"#D79A5E", density:1.00},
+    {key:"potato",      label:"มันฝรั่ง (potato)",     counted:true,  color:"#C8B87A", density:1.00},
+    {key:"pea",         label:"ถั่วลันเตา (pea)",       counted:true,  color:"#7E8B3A", density:1.00},
+    {key:"carrot",      label:"แครอท (carrot)",       counted:true,  color:"#DD7A2E", density:1.00},
+    {key:"background1", label:"พื้นหลัง 1 (background1)", counted:false, color:"#5B7480", density:1.00}
+  ];
+
+  var DEFAULT_MODEL = {
+    name: "ค่าเริ่มต้น (ประมาณการเบื้องต้น)",
+    builtIn:true,
+    minAreaPx:25,
+    updatedAt:null,
+    classes:{
+      chicken:    {hMin:15,hMax:50, sMin:17,sMax:45, vMin:35,vMax:97,  meanH:32, meanS:27, meanV:80, count:1},
+      potato:     {hMin:20,hMax:50, sMin:0, sMax:17, vMin:70,vMax:100, meanH:32, meanS:12, meanV:89, count:1},
+      pea:        {hMin:34,hMax:54, sMin:48,sMax:90, vMin:60,vMax:98,  meanH:44, meanS:72, meanV:85, count:1},
+      carrot:     {hMin:15,hMax:50, sMin:40,sMax:100,vMin:50,vMax:100, meanH:36, meanS:71, meanV:87, count:1},
+      background1:{hMin:185,hMax:225,sMin:15,sMax:85,vMin:25,vMax:75, meanH:208,meanS:50, meanV:55, count:1}
+    }
+  };
+
+  // ---------------------------------------------------------------
+  // State
+  // ---------------------------------------------------------------
+  var state = {
+    classDefs:[],              // [{key,label,counted,color}]
+    models:{},                 // name -> model
+    analyzeImage:null,         // HTMLImageElement
+    analyzeResult:null,        // last analysis result, for export
+    trainImage:null,           // HTMLImageElement
+    trainCanvasScale:1,
+    trainBoxes:[],             // {cls,x,y,w,h} in canvas px
+    draftClasses:{},           // cls -> accumulator
+    activeClass:null
+  };
+
+  function freshAccumulator(){
+    return {hMin:999,hMax:-999,sMin:999,sMax:-999,vMin:999,vMax:-999,
+            sumH:0,sumS:0,sumV:0,count:0};
+  }
+  function initDraftClasses(){
+    state.draftClasses = {};
+    state.classDefs.forEach(function(c){ state.draftClasses[c.key] = freshAccumulator(); });
+  }
+
+  // ---------------------------------------------------------------
+  // Class (ingredient / background) definitions — shared across models
+  // ---------------------------------------------------------------
+  function loadClassDefsFromStorage(){
+    try{
+      var raw = localStorage.getItem(CLASS_STORAGE_KEY);
+      if(raw){
+        state.classDefs = JSON.parse(raw);
+        // backfill density for definitions saved before this field existed
+        state.classDefs.forEach(function(c){
+          if(typeof c.density !== "number" || !isFinite(c.density) || c.density<=0) c.density = 1.00;
+        });
+        return;
+      }
+    }catch(e){
+      console.warn("ไม่สามารถอ่านรายชื่อชนิดจาก local storage ได้", e);
+    }
+    state.classDefs = DEFAULT_CLASS_DEFS.map(function(c){ return Object.assign({}, c); });
+  }
+  function classDefDensity(key){
+    var c = findClassDef(key);
+    return (c && typeof c.density==="number" && isFinite(c.density) && c.density>0) ? c.density : 1.00;
+  }
+  // which model the density editor currently writes to; null = the built-in default
+  function activeDensityModel(){
+    var mk = (typeof modelSelect !== "undefined" && modelSelect) ? modelSelect.value : null;
+    if(mk && mk !== "__default__" && state.models[mk]) return state.models[mk];
+    return null;
+  }
+  function densityOf(key){
+    var m = activeDensityModel();
+    if(m && m.densities && typeof m.densities[key]==="number" && isFinite(m.densities[key]) && m.densities[key]>0){
+      return m.densities[key];
+    }
+    return classDefDensity(key);
+  }
+  function setDensity(key, val){
+    var v = (isFinite(val) && val>0) ? val : 1.00;
+    var m = activeDensityModel();
+    if(m){
+      if(!m.densities) m.densities = {};
+      m.densities[key] = v;
+      m.updatedAt = new Date().toISOString();
+      saveModelsToStorage();
+      return;
+    }
+    var c = findClassDef(key);
+    if(c){ c.density = v; saveClassDefsToStorage(); }
+  }
+  // snapshot of every counted class's density, for saving into a model
+  function currentDensityMap(){
+    var out = {};
+    state.classDefs.forEach(function(c){ out[c.key] = densityOf(c.key); });
+    return out;
+  }
+  function saveClassDefsToStorage(){
+    try{
+      localStorage.setItem(CLASS_STORAGE_KEY, JSON.stringify(state.classDefs));
+    }catch(e){
+      console.warn("ไม่สามารถบันทึกรายชื่อชนิดได้", e);
+    }
+  }
+  function getCountedClassDefs(){ return state.classDefs.filter(function(c){ return c.counted; }); }
+  function findClassDef(key){
+    for(var i=0;i<state.classDefs.length;i++){ if(state.classDefs[i].key===key) return state.classDefs[i]; }
+    return null;
+  }
+  function labelOf(key){ var c=findClassDef(key); return c? c.label : key; }
+  function colorOf(key){ var c=findClassDef(key); return c? c.color : "#999999"; }
+  function nextPaletteColor(){
+    var used = state.classDefs.map(function(c){ return c.color; });
+    for(var i=0;i<COLOR_PALETTE.length;i++){
+      if(used.indexOf(COLOR_PALETTE[i])===-1) return COLOR_PALETTE[i];
+    }
+    return "#"+Math.floor(Math.random()*0xFFFFFF).toString(16).padStart(6,"0");
+  }
+  function readableTextColor(hex){
+    var v = parseInt(hex.replace("#",""),16);
+    var r=(v>>16)&255, g=(v>>8)&255, b=v&255;
+    var lum = (0.299*r+0.587*g+0.114*b)/255;
+    return lum > 0.6 ? "#2A2010" : "#ffffff";
+  }
+
+  // ---------------------------------------------------------------
+  // Utility: color conversion
+  // ---------------------------------------------------------------
+  function rgbToHsv(r,g,b){
+    r/=255; g/=255; b/=255;
+    var max=Math.max(r,g,b), min=Math.min(r,g,b), d=max-min, h=0;
+    if(d!==0){
+      if(max===r) h=((g-b)/d)%6;
+      else if(max===g) h=(b-r)/d+2;
+      else h=(r-g)/d+4;
+      h*=60;
+      if(h<0) h+=360;
+    }
+    var s = max===0?0:d/max;
+    var v = max;
+    return {h:h, s:s*100, v:v*100};
+  }
+
+  function hueDiff(a,b){
+    var d = Math.abs(a-b);
+    return Math.min(d, 360-d);
+  }
+
+  // ---------------------------------------------------------------
+  // Model persistence
+  // ---------------------------------------------------------------
+  function loadModelsFromStorage(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        state.models = JSON.parse(raw);
+        // backfill for models saved before densities existed
+        Object.keys(state.models).forEach(function(n){
+          if(!state.models[n].densities) state.models[n].densities = {};
+        });
+      }
+    }catch(e){
+      console.warn("ไม่สามารถอ่าน local storage ได้", e);
+    }
+  }
+  function saveModelsToStorage(){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.models));
+    }catch(e){
+      console.warn("ไม่สามารถบันทึก local storage ได้ (แนะนำให้ส่งออกเป็นไฟล์ .json แทน)", e);
+    }
+  }
+
+  function allModelsForSelect(){
+    var list = [{key:"__default__", model:DEFAULT_MODEL}];
+    Object.keys(state.models).forEach(function(name){
+      list.push({key:name, model:state.models[name]});
+    });
+    return list;
+  }
+
+  function getModelByKey(key){
+    if(key==="__default__") return DEFAULT_MODEL;
+    return state.models[key] || DEFAULT_MODEL;
+  }
+
+  // ---------------------------------------------------------------
+  // Tabs
+  // ---------------------------------------------------------------
+  document.getElementById("tabBtnAnalyze").addEventListener("click", function(){ switchTab("analyze"); });
+  document.getElementById("tabBtnTrain").addEventListener("click", function(){ switchTab("train"); });
+  function switchTab(view){
+    document.getElementById("view-analyze").classList.toggle("active", view==="analyze");
+    document.getElementById("view-train").classList.toggle("active", view==="train");
+    document.getElementById("tabBtnAnalyze").classList.toggle("active", view==="analyze");
+    document.getElementById("tabBtnTrain").classList.toggle("active", view==="train");
+  }
+
+  // ---------------------------------------------------------------
+  // ANALYZE VIEW
+  // ---------------------------------------------------------------
+  var analyzeFileInput = document.getElementById("analyzeFileInput");
+  var modelSelect = document.getElementById("modelSelect");
+  var minAreaOverride = document.getElementById("minAreaOverride");
+  var minAreaOverrideOut = document.getElementById("minAreaOverrideOut");
+  var procSizeSelect = document.getElementById("procSize");
+  var totalWeightInput = document.getElementById("totalWeightInput");
+  var runAnalysisBtn = document.getElementById("runAnalysisBtn");
+  var analyzeStatus = document.getElementById("analyzeStatus");
+  var exportExcelBtn = document.getElementById("exportExcelBtn");
+  var analyzePreviewCanvas = document.getElementById("analyzePreviewCanvas");
+  var analyzeOverlayCanvas = document.getElementById("analyzeOverlayCanvas");
+  var resultsTableBody = document.getElementById("resultsTableBody");
+  var resultsTableFoot = document.getElementById("resultsTableFoot");
+  var proportionChart = document.getElementById("proportionChart");
+
+  var densityList = document.getElementById("densityList");
+  var resetDensityBtn = document.getElementById("resetDensityBtn");
+  var calibrateList = document.getElementById("calibrateList");
+  var calibrateBtn = document.getElementById("calibrateBtn");
+  var calibrateStatus = document.getElementById("calibrateStatus");
+
+  minAreaOverride.addEventListener("input", function(){
+    minAreaOverrideOut.textContent = minAreaOverride.value;
+  });
+
+  // ---------------- density editor ----------------
+  function renderDensityList(){
+    var counted = getCountedClassDefs();
+    var m = activeDensityModel();
+    var owner = m ? m.name : DEFAULT_MODEL.name;
+    if(counted.length===0){
+      densityList.innerHTML = '<div class="empty-note">ยังไม่มีวัตถุดิบที่ตั้งไว้ — เพิ่มได้ในหน้าเทรนโมเดล</div>';
+      return;
+    }
+    densityList.innerHTML = '<div class="hint" style="margin:0 0 8px 0;">ค่าด้านล่างเก็บอยู่ในโมเดล <b>'+xmlEscape(owner)+'</b> — เปลี่ยนโมเดลแล้วค่าจะเปลี่ยนตาม</div>';
+    counted.forEach(function(c){
+      var row = document.createElement("div");
+      row.className = "model-row";
+      row.innerHTML =
+        '<div><span class="swatch" style="background:'+c.color+'"></span>'+
+        '<span class="name">'+xmlEscape(c.label)+'</span></div>'+
+        '<div class="actions"><input type="number" class="density-input" data-key="'+xmlEscape(c.key)+'" '+
+        'min="0.01" step="0.01" value="'+densityOf(c.key).toFixed(2)+'" style="width:90px;"></div>';
+      densityList.appendChild(row);
+    });
+  }
+
+  densityList.addEventListener("change", function(ev){
+    var input = ev.target.closest(".density-input");
+    if(!input) return;
+    var key = input.getAttribute("data-key");
+    var val = parseFloat(input.value);
+    if(!isFinite(val) || val<=0){
+      val = 1.00;
+      input.value = "1.00";
+    }
+    setDensity(key, val);
+    recalcFromCurrentResult();
+  });
+
+  resetDensityBtn.addEventListener("click", function(){
+    state.classDefs.forEach(function(c){ setDensity(c.key, 1.00); });
+    renderDensityList();
+    recalcFromCurrentResult();
+    setStatus(calibrateStatus, "คืนค่า density เป็น 1.00 ทั้งหมดแล้ว", false);
+  });
+
+  // re-run the numbers without re-processing the image
+  function recalcFromCurrentResult(){
+    if(state.analyzeResult && state.analyzeResult.perClass){
+      renderResults(state.analyzeResult, parseFloat(totalWeightInput.value) || 0);
+    }
+  }
+
+  totalWeightInput.addEventListener("change", recalcFromCurrentResult);
+
+  // ---------------- calibration ----------------
+  function renderCalibrateList(rows, totalWeightG){
+    if(!rows || rows.length===0){
+      calibrateList.innerHTML = '<div class="empty-note">วิเคราะห์ภาพก่อน แล้วช่องกรอกน้ำหนักจริงจะขึ้นที่นี่</div>';
+      calibrateBtn.disabled = true;
+      return;
+    }
+    // keep whatever the user already typed in
+    var prev = {};
+    Array.prototype.forEach.call(calibrateList.querySelectorAll(".calib-input"), function(inp){
+      prev[inp.getAttribute("data-key")] = inp.value;
+    });
+
+    calibrateList.innerHTML = "";
+    rows.forEach(function(r){
+      var row = document.createElement("div");
+      row.className = "model-row";
+      var suggested = (r.wgt!==null) ? r.wgt.toFixed(1) : "";
+      row.innerHTML =
+        '<div><span class="swatch" style="background:'+colorOf(r.key)+'"></span>'+
+        '<span class="name">'+xmlEscape(labelOf(r.key))+'</span>'+
+        '<div class="meta">พื้นที่ '+r.area.toLocaleString()+' px</div></div>'+
+        '<div class="actions"><input type="number" class="calib-input" data-key="'+xmlEscape(r.key)+'" '+
+        'min="0" step="0.1" placeholder="'+(suggested||"กรัมจริง")+'" value="'+(prev[r.key]||"")+'" style="width:100px;"></div>';
+      calibrateList.appendChild(row);
+    });
+    calibrateBtn.disabled = false;
+  }
+
+  calibrateBtn.addEventListener("click", function(){
+    if(!state.analyzeResult || !state.analyzeResult.rows){ return; }
+    var rows = state.analyzeResult.rows;
+    var entries = [];
+    rows.forEach(function(r){
+      var inp = calibrateList.querySelector('.calib-input[data-key="'+CSS.escape(r.key)+'"]');
+      if(!inp) return;
+      var g = parseFloat(inp.value);
+      if(isFinite(g) && g>0 && r.area>0){
+        entries.push({key:r.key, grams:g, area:r.area});
+      }
+    });
+
+    if(entries.length<2){
+      setStatus(calibrateStatus, "กรุณากรอกน้ำหนักจริงอย่างน้อย 2 ชนิด (ที่ตรวจพบพื้นที่ในภาพ) เพื่อเทียบสัดส่วนกัน", true);
+      return;
+    }
+
+    // density is grams per pixel, normalised so the first entry becomes 1.00
+    var raw = entries.map(function(e){ return {key:e.key, gpp: e.grams/e.area}; });
+    var base = raw[0].gpp;
+    if(!(base>0)){
+      setStatus(calibrateStatus, "ค่าที่กรอกไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง", true);
+      return;
+    }
+    raw.forEach(function(x){ setDensity(x.key, x.gpp/base); });
+
+    // total weight follows from the calibration entries if the user has not set one
+    if(!(parseFloat(totalWeightInput.value)>0)){
+      var sumG = entries.reduce(function(a,e){ return a+e.grams; }, 0);
+      if(entries.length === rows.filter(function(r){return r.area>0;}).length){
+        totalWeightInput.value = sumG.toFixed(1);
+      }
+    }
+
+    renderDensityList();
+    recalcFromCurrentResult();
+    setStatus(calibrateStatus, "ปรับเทียบเรียบร้อย — คำนวณค่า density ใหม่จาก "+entries.length+" ชนิดแล้ว", false);
+  });
+
+  function refreshModelSelect(){
+    modelSelect.innerHTML = "";
+    allModelsForSelect().forEach(function(entry){
+      var opt = document.createElement("option");
+      opt.value = entry.key;
+      opt.textContent = entry.model.name + (entry.model.builtIn ? "" : "");
+      modelSelect.appendChild(opt);
+    });
+    if(state.models && Object.keys(state.models).length>0){
+      // default to most recently updated custom model
+      var names = Object.keys(state.models);
+      names.sort(function(a,b){
+        return new Date(state.models[b].updatedAt||0) - new Date(state.models[a].updatedAt||0);
+      });
+      modelSelect.value = names[0];
+    }
+  }
+
+  modelSelect.addEventListener("change", function(){
+    var m = getModelByKey(modelSelect.value);
+    minAreaOverride.value = m.minAreaPx || 25;
+    minAreaOverrideOut.textContent = minAreaOverride.value;
+    renderDensityList();
+    recalcFromCurrentResult();
+  });
+
+  analyzeFileInput.addEventListener("change", function(ev){
+    var file = ev.target.files[0];
+    if(!file) return;
+    var img = new Image();
+    img.onload = function(){
+      state.analyzeImage = img;
+      drawToFitCanvas(analyzePreviewCanvas, img, 620);
+      clearCanvas(analyzeOverlayCanvas);
+      runAnalysisBtn.disabled = false;
+      exportExcelBtn.disabled = true;
+      state.analyzeResult = null;
+      resultsTableBody.innerHTML = '<tr><td colspan="7" class="empty-note">โหลดภาพแล้ว — กด "วิเคราะห์ภาพ" เพื่อดูผล</td></tr>';
+      resultsTableFoot.style.display = "none";
+      clearCanvas(proportionChart);
+      setStatus(analyzeStatus, "", false);
+    };
+    var reader = new FileReader();
+    reader.onload = function(e){ img.src = e.target.result; };
+    reader.readAsDataURL(file);
+  });
+
+  function drawToFitCanvas(canvas, img, maxW){
+    var scale = Math.min(1, maxW / img.naturalWidth);
+    var w = Math.round(img.naturalWidth * scale);
+    var h = Math.round(img.naturalHeight * scale);
+    canvas.width = w; canvas.height = h;
+    var ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0, w, h);
+    return {w:w,h:h,scale:scale};
+  }
+  function clearCanvas(canvas){
+    canvas.width = canvas.width || 10;
+    var ctx = canvas.getContext("2d");
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+  }
+
+  function setStatus(el, msg, isErr){
+    el.textContent = msg;
+    el.classList.toggle("err", !!isErr);
+  }
+
+  runAnalysisBtn.addEventListener("click", function(){
+    if(!state.analyzeImage){ return; }
+    setStatus(analyzeStatus, "กำลังวิเคราะห์ภาพ...", false);
+    runAnalysisBtn.disabled = true;
+    setTimeout(function(){
+      try{
+        var model = getModelByKey(modelSelect.value);
+        var minArea = parseInt(minAreaOverride.value, 10);
+        var maxDim = parseInt(procSizeSelect.value, 10);
+        var result = analyzeImage(state.analyzeImage, model, minArea, maxDim);
+        state.analyzeResult = result;
+        state.analyzeResult.modelName = model.name;
+        renderResults(result, parseFloat(totalWeightInput.value) || 0);
+        exportExcelBtn.disabled = false;
+        setStatus(analyzeStatus, "วิเคราะห์เสร็จแล้ว (ใช้เวลาประมวลผล " + result.timeMs + " ms)", false);
+      }catch(err){
+        console.error(err);
+        setStatus(analyzeStatus, "เกิดข้อผิดพลาด: " + err.message, true);
+      }
+      runAnalysisBtn.disabled = false;
+    }, 30);
+  });
+
+  // Core image analysis pipeline
+  function analyzeImage(img, model, minAreaPx, maxDim){
+    var t0 = performance.now();
+    var scale = Math.min(1, maxDim / Math.max(img.naturalWidth, img.naturalHeight));
+    var w = Math.max(1, Math.round(img.naturalWidth * scale));
+    var h = Math.max(1, Math.round(img.naturalHeight * scale));
+
+    var off = document.createElement("canvas");
+    off.width = w; off.height = h;
+    var octx = off.getContext("2d", {willReadFrequently:true});
+    octx.drawImage(img, 0, 0, w, h);
+    var imgData = octx.getImageData(0,0,w,h);
+    var data = imgData.data;
+
+    // classify each pixel -> classMap: 0=none/excluded, 1..N = countedDefs index+1
+    var countedDefs = getCountedClassDefs();
+    var classMap = new Uint8Array(w*h);
+    var classIndex = {}; // key -> index (1-based), counted classes only
+    countedDefs.forEach(function(c,i){ classIndex[c.key] = i+1; });
+    var countedFlag = {}; // key -> true/false, all classes (counted + background/excluded)
+    var allDefs = state.classDefs;
+    allDefs.forEach(function(c){ countedFlag[c.key] = c.counted; });
+
+    for(var p=0, idx=0; p<data.length; p+=4, idx++){
+      var r=data[p], g=data[p+1], b=data[p+2];
+      var hsv = rgbToHsv(r,g,b);
+      var best = null, bestDist = Infinity;
+      for(var ci=0; ci<allDefs.length; ci++){
+        var key = allDefs[ci].key;
+        var rg = model.classes[key];
+        if(!rg) continue;
+        if(hsv.h>=rg.hMin && hsv.h<=rg.hMax && hsv.s>=rg.sMin && hsv.s<=rg.sMax && hsv.v>=rg.vMin && hsv.v<=rg.vMax){
+          var dh = hueDiff(hsv.h, rg.meanH) / 3.6;
+          var ds = Math.abs(hsv.s - rg.meanS);
+          var dv = Math.abs(hsv.v - rg.meanV);
+          var dist = Math.sqrt(dh*dh + ds*ds + dv*dv);
+          if(dist < bestDist){ bestDist = dist; best = key; }
+        }
+      }
+      if(best && countedFlag[best]){
+        classMap[idx] = classIndex[best];
+      }
+    }
+
+    // connected components (4-neighbour flood fill, iterative)
+    var visited = new Uint8Array(w*h);
+    var componentIdMap = new Int32Array(w*h); // 0 = none
+    var components = []; // {classIdx, area, minX,minY,maxX,maxY, keep}
+    var stackX = new Int32Array(w*h);
+    var stackY = new Int32Array(w*h);
+
+    for(var y=0; y<h; y++){
+      for(var x=0; x<w; x++){
+        var i0 = y*w+x;
+        if(classMap[i0]===0 || visited[i0]) continue;
+        var cls = classMap[i0];
+        var sp = 0;
+        stackX[sp]=x; stackY[sp]=y; sp++;
+        visited[i0]=1;
+        var area=0, minX=x,maxX=x,minY=y,maxY=y;
+        var compId = components.length+1;
+        while(sp>0){
+          sp--;
+          var cx = stackX[sp], cy = stackY[sp];
+          var ci = cy*w+cx;
+          componentIdMap[ci] = compId;
+          area++;
+          if(cx<minX) minX=cx; if(cx>maxX) maxX=cx;
+          if(cy<minY) minY=cy; if(cy>maxY) maxY=cy;
+          // neighbours
+          if(cx>0){ var n=ci-1; if(!visited[n] && classMap[n]===cls){visited[n]=1; stackX[sp]=cx-1; stackY[sp]=cy; sp++;} }
+          if(cx<w-1){ var n2=ci+1; if(!visited[n2] && classMap[n2]===cls){visited[n2]=1; stackX[sp]=cx+1; stackY[sp]=cy; sp++;} }
+          if(cy>0){ var n3=ci-w; if(!visited[n3] && classMap[n3]===cls){visited[n3]=1; stackX[sp]=cx; stackY[sp]=cy-1; sp++;} }
+          if(cy<h-1){ var n4=ci+w; if(!visited[n4] && classMap[n4]===cls){visited[n4]=1; stackX[sp]=cx; stackY[sp]=cy+1; sp++;} }
+        }
+        components.push({classIdx:cls, area:area, minX:minX,maxX:maxX,minY:minY,maxY:maxY, keep: area>=minAreaPx});
+      }
+    }
+
+    // aggregate per class
+    var perClass = {};
+    countedDefs.forEach(function(c){ perClass[c.key] = {count:0, area:0}; });
+    components.forEach(function(c){
+      if(!c.keep) return;
+      var key = countedDefs[c.classIdx-1].key;
+      perClass[key].count++;
+      perClass[key].area += c.area;
+    });
+    var totalArea = 0;
+    countedDefs.forEach(function(c){ totalArea += perClass[c.key].area; });
+
+    // build overlay image
+    var overlayData = octx.createImageData(w,h);
+    var od = overlayData.data;
+    for(var q=0; q<w*h; q++){
+      var srcOff = q*4;
+      od[srcOff] = data[srcOff]; od[srcOff+1]=data[srcOff+1]; od[srcOff+2]=data[srcOff+2]; od[srcOff+3]=255;
+      var cId = componentIdMap[q];
+      if(cId>0){
+        var comp = components[cId-1];
+        if(comp.keep){
+          var key = countedDefs[comp.classIdx-1].key;
+          var col = hexToRgb(colorOf(key));
+          var alpha = 0.55;
+          od[srcOff]   = Math.round(data[srcOff]*(1-alpha)   + col.r*alpha);
+          od[srcOff+1] = Math.round(data[srcOff+1]*(1-alpha) + col.g*alpha);
+          od[srcOff+2] = Math.round(data[srcOff+2]*(1-alpha) + col.b*alpha);
+        }
+      }
+    }
+
+    // draw overlay to display canvas (scaled to match preview)
+    var display = drawToFitCanvas(analyzePreviewCanvas, img, 620); // keep preview synced
+    var overlayOff = document.createElement("canvas");
+    overlayOff.width = w; overlayOff.height = h;
+    overlayOff.getContext("2d").putImageData(overlayData, 0, 0);
+
+    analyzeOverlayCanvas.width = display.w;
+    analyzeOverlayCanvas.height = display.h;
+    var dctx = analyzeOverlayCanvas.getContext("2d");
+    dctx.drawImage(overlayOff, 0, 0, display.w, display.h);
+
+    // draw bounding boxes + counts on overlay
+    var sx = display.w / w, sy = display.h / h;
+    dctx.font = "10px " + getComputedStyle(document.body).fontFamily;
+    dctx.lineWidth = 1.3;
+    var pieceNo = {};
+    components.forEach(function(c){
+      if(!c.keep) return;
+      var key = countedDefs[c.classIdx-1].key;
+      pieceNo[key] = (pieceNo[key]||0)+1;
+      dctx.strokeStyle = "rgba(0,0,0,0.55)";
+      dctx.strokeRect(c.minX*sx, c.minY*sy, (c.maxX-c.minX+1)*sx, (c.maxY-c.minY+1)*sy);
+    });
+
+    var t1 = performance.now();
+    return {
+      w:w, h:h, perClass:perClass, totalArea:totalArea,
+      timeMs: Math.round(t1-t0)
+    };
+  }
+
+  function hexToRgb(hex){
+    var v = parseInt(hex.replace("#",""),16);
+    return {r:(v>>16)&255, g:(v>>8)&255, b:v&255};
+  }
+
+  function renderResults(result, totalWeightG){
+    var rows = [];
+    var totalCount=0, totalArea=result.totalArea, totalWeight=0;
+
+    // weighted area = pixel area x density, so denser ingredients contribute more grams
+    var totalWeighted = 0;
+    getCountedClassDefs().forEach(function(c){
+      var d = result.perClass[c.key] || {count:0, area:0};
+      totalWeighted += d.area * densityOf(c.key);
+    });
+
+    getCountedClassDefs().forEach(function(c){
+      var k = c.key;
+      var d = result.perClass[k] || {count:0, area:0};
+      var dens = densityOf(k);
+      var pct = totalArea>0 ? (d.area/totalArea*100) : 0;
+      var wPct = totalWeighted>0 ? (d.area*dens/totalWeighted*100) : 0;
+      var wgt = totalWeightG>0 ? (totalWeightG * (totalWeighted>0 ? d.area*dens/totalWeighted : 0)) : null;
+      totalCount += d.count;
+      if(wgt!==null) totalWeight += wgt;
+      rows.push({key:k, count:d.count, area:d.area, density:dens, pct:pct, wPct:wPct, wgt:wgt});
+    });
+
+    resultsTableBody.innerHTML = "";
+    rows.forEach(function(r){
+      var tr = document.createElement("tr");
+      tr.innerHTML =
+        '<td><span class="swatch" style="background:'+colorOf(r.key)+'"></span>'+xmlEscape(labelOf(r.key))+'</td>'+
+        '<td class="num">'+r.count+'</td>'+
+        '<td class="num">'+r.area.toLocaleString()+'</td>'+
+        '<td class="num">'+r.pct.toFixed(1)+'</td>'+
+        '<td class="num">'+r.density.toFixed(2)+'</td>'+
+        '<td class="num">'+r.wPct.toFixed(1)+'</td>'+
+        '<td class="num">'+(r.wgt!==null? r.wgt.toFixed(1) : "—")+'</td>';
+      resultsTableBody.appendChild(tr);
+    });
+    resultsTableFoot.style.display = "";
+    document.getElementById("footCount").textContent = totalCount;
+    document.getElementById("footArea").textContent = totalArea.toLocaleString();
+    document.getElementById("footWeight").textContent = totalWeightG>0 ? totalWeight.toFixed(1) : "—";
+
+    drawBarChart(rows);
+    state.analyzeResult.rows = rows;
+    state.analyzeResult.totalWeightG = totalWeightG;
+    renderCalibrateList(rows, totalWeightG);
+  }
+
+  function drawBarChart(rows){
+    var ctx = proportionChart.getContext("2d");
+    var cw = proportionChart.clientWidth || 600;
+    proportionChart.width = cw;
+    proportionChart.height = 34*rows.length + 20;
+    ctx.clearRect(0,0,proportionChart.width, proportionChart.height);
+    var labelW = 110, barMaxW = proportionChart.width - labelW - 70;
+    ctx.font = "12px " + getComputedStyle(document.body).fontFamily;
+    rows.forEach(function(r, i){
+      var y = 10 + i*34;
+      ctx.fillStyle = "#16242C";
+      ctx.textBaseline = "middle";
+      ctx.fillText(labelOf(r.key).split(" (")[0], 0, y+10);
+      var bw = Math.max(2, barMaxW * (r.wPct/100));
+      ctx.fillStyle = colorOf(r.key);
+      ctx.fillRect(labelW, y, bw, 20);
+      ctx.fillStyle = "#5A6B70";
+      ctx.font = "11px ui-monospace, monospace";
+      ctx.fillText(r.wPct.toFixed(1)+"%  (" + r.count + " ชิ้น)", labelW+bw+8, y+10);
+      ctx.font = "12px " + getComputedStyle(document.body).fontFamily;
+    });
+  }
+
+  // ---------------------------------------------------------------
+  // Excel export (SpreadsheetML XML — no external library needed)
+  // ---------------------------------------------------------------
+  exportExcelBtn.addEventListener("click", function(){
+    if(!state.analyzeResult || !state.analyzeResult.rows) return;
+    var r = state.analyzeResult;
+    var xml = buildExcelXml(r);
+    downloadFile(xml, "ingredient-analysis-" + timestampStr() + ".xls", "application/vnd.ms-excel");
+  });
+
+  function xmlEscape(s){
+    return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+  function cellStr(v){ return '<Cell><Data ss:Type="String">'+xmlEscape(v)+'</Data></Cell>'; }
+  function cellNum(v){ return '<Cell><Data ss:Type="Number">'+(isFinite(v)?v:0)+'</Data></Cell>'; }
+
+  function buildExcelXml(r){
+    var rowsXml = "";
+    rowsXml += "<Row ss:StyleID=\"header\">" + ["วัตถุดิบ","จำนวนชิ้น","พื้นที่ (px)","สัดส่วนพื้นที่ (%)","density (น้ำหนักต่อพื้นที่)","สัดส่วนน้ำหนัก (%)","น้ำหนักโดยประมาณ (g)"].map(cellStr).join("") + "</Row>";
+    var totalCount=0, totalArea=0, totalWeight=0;
+    r.rows.forEach(function(row){
+      totalCount+=row.count; totalArea+=row.area; totalWeight += row.wgt||0;
+      rowsXml += "<Row>" +
+        cellStr(labelOf(row.key)) +
+        cellNum(row.count) +
+        cellNum(row.area) +
+        cellNum(Number(row.pct.toFixed(2))) +
+        cellNum(Number(row.density.toFixed(4))) +
+        cellNum(Number(row.wPct.toFixed(2))) +
+        (row.wgt!==null ? cellNum(Number(row.wgt.toFixed(2))) : cellStr("")) +
+        "</Row>";
+    });
+    rowsXml += "<Row ss:StyleID=\"header\">" +
+      cellStr("รวม") + cellNum(totalCount) + cellNum(totalArea) + cellNum(100) + cellStr("") + cellNum(100) +
+      (r.totalWeightG>0 ? cellNum(Number(totalWeight.toFixed(2))) : cellStr("")) +
+      "</Row>";
+
+    var metaXml =
+      "<Row>" + cellStr("โมเดลที่ใช้") + cellStr(r.modelName||"") + "</Row>" +
+      "<Row>" + cellStr("วันเวลาที่วิเคราะห์") + cellStr(new Date().toLocaleString("th-TH")) + "</Row>" +
+      "<Row>" + cellStr("ความละเอียดที่ประมวลผล (px)") + cellStr(r.w+" x "+r.h) + "</Row>" +
+      (r.totalWeightG>0 ? ("<Row>" + cellStr("น้ำหนักรวมที่ระบุ (g)") + cellNum(r.totalWeightG) + "</Row>") : "");
+
+    return '<?xml version="1.0"?>' +
+    '<?mso-application progid="Excel.Sheet"?>' +
+    '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" ' +
+    'xmlns:o="urn:schemas-microsoft-com:office:office" ' +
+    'xmlns:x="urn:schemas-microsoft-com:office:excel" ' +
+    'xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">' +
+    '<Styles><Style ss:ID="header"><Font ss:Bold="1"/><Interior ss:Color="#DCEAEC" ss:Pattern="Solid"/></Style></Styles>' +
+    '<Worksheet ss:Name="ผลการวิเคราะห์"><Table>' + rowsXml + '</Table></Worksheet>' +
+    '<Worksheet ss:Name="ข้อมูลเพิ่มเติม"><Table>' + metaXml + '</Table></Worksheet>' +
+    '</Workbook>';
+  }
+
+  function downloadFile(content, filename, mime){
+    var blob = new Blob([content], {type:mime});
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+  }
+  function timestampStr(){
+    var d = new Date();
+    function p(n){return (n<10?"0":"")+n;}
+    return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+"-"+p(d.getHours())+p(d.getMinutes());
+  }
+
+  // ---------------------------------------------------------------
+  // TRAIN VIEW
+  // ---------------------------------------------------------------
+  var trainFileInput = document.getElementById("trainFileInput");
+  var trainCanvas = document.getElementById("trainCanvas");
+  var classButtonsWrap = document.getElementById("classButtons");
+  var undoBoxBtn = document.getElementById("undoBoxBtn");
+  var clearBoxesBtn = document.getElementById("clearBoxesBtn");
+  var sampleCountsEl = document.getElementById("sampleCounts");
+  var trainModelName = document.getElementById("trainModelName");
+  var existingModelSelect = document.getElementById("existingModelSelect");
+  var trainMinArea = document.getElementById("trainMinArea");
+  var trainMinAreaOut = document.getElementById("trainMinAreaOut");
+  var saveModelBtn = document.getElementById("saveModelBtn");
+  var trainStatus = document.getElementById("trainStatus");
+  var savedModelsList = document.getElementById("savedModelsList");
+  var exportModelsBtn = document.getElementById("exportModelsBtn");
+  var importModelsInput = document.getElementById("importModelsInput");
+  var newClassNameInput = document.getElementById("newClassName");
+  var newClassTypeSelect = document.getElementById("newClassType");
+  var addClassBtn = document.getElementById("addClassBtn");
+  var classManageList = document.getElementById("classManageList");
+
+  trainMinArea.addEventListener("input", function(){ trainMinAreaOut.textContent = trainMinArea.value; });
+
+  classButtonsWrap.addEventListener("click", function(ev){
+    var btn = ev.target.closest(".class-btn");
+    if(!btn) return;
+    state.activeClass = btn.getAttribute("data-class");
+    Array.prototype.forEach.call(classButtonsWrap.children, function(b){
+      b.classList.toggle("active", b===btn);
+    });
+  });
+
+  function renderClassButtons(){
+    classButtonsWrap.innerHTML = "";
+    state.classDefs.forEach(function(c){
+      var btn = document.createElement("button");
+      btn.className = "class-btn" + (state.activeClass===c.key ? " active":"");
+      btn.setAttribute("data-class", c.key);
+      btn.style.background = c.color;
+      btn.style.color = readableTextColor(c.color);
+      btn.innerHTML = xmlEscape(c.label) + "<small>" + (c.counted? "วัตถุดิบ — นับสัดส่วน" : "พื้นหลัง — ไม่นับ") + "</small>";
+      classButtonsWrap.appendChild(btn);
+    });
+  }
+
+  function renderClassManageList(){
+    if(state.classDefs.length===0){
+      classManageList.innerHTML = '<div class="empty-note">ยังไม่มีชนิดที่ตั้งไว้ — เพิ่มด้านบน</div>';
+      return;
+    }
+    classManageList.innerHTML = "";
+    state.classDefs.forEach(function(c){
+      var row = document.createElement("div");
+      row.className = "model-row";
+      row.innerHTML =
+        '<div><span class="swatch" style="background:'+c.color+'"></span>'+
+        '<span class="name">'+xmlEscape(c.label)+'</span>'+
+        '<span class="badge">'+(c.counted?"วัตถุดิบ":"พื้นหลัง — ไม่นับ")+'</span></div>'+
+        '<div class="actions"><button class="btn secondary small" data-action="delete-class" data-key="'+xmlEscape(c.key)+'">ลบ</button></div>';
+      classManageList.appendChild(row);
+    });
+  }
+
+  classManageList.addEventListener("click", function(ev){
+    var btn = ev.target.closest("button[data-action=delete-class]");
+    if(!btn) return;
+    var key = btn.getAttribute("data-key");
+    if(confirm('ลบชนิด "'+labelOf(key)+'" ใช่หรือไม่? (โมเดลที่เคยเทรนไว้จะไม่ถูกลบ แต่ชนิดนี้จะไม่ถูกใช้งานอีก)')){
+      deleteClassDef(key);
+    }
+  });
+
+  addClassBtn.addEventListener("click", function(){
+    var name = (newClassNameInput.value||"").trim();
+    if(!name){ setStatus(trainStatus, "กรุณาตั้งชื่อชนิดก่อนเพิ่ม", true); return; }
+    if(findClassDef(name)){ setStatus(trainStatus, 'มีชนิดชื่อ "'+name+'" อยู่แล้ว', true); return; }
+    var counted = newClassTypeSelect.value === "counted";
+    var def = {key:name, label:name, counted:counted, color:nextPaletteColor(), density:1.00};
+    state.classDefs.push(def);
+    state.draftClasses[name] = freshAccumulator();
+    saveClassDefsToStorage();
+    renderClassButtons();
+    renderClassManageList();
+    renderDensityList();
+    newClassNameInput.value = "";
+    setStatus(trainStatus, 'เพิ่มชนิด "'+name+'" แล้ว ('+(counted?"วัตถุดิบ":"พื้นหลัง — ไม่นับ")+')', false);
+  });
+
+  function deleteClassDef(key){
+    state.classDefs = state.classDefs.filter(function(c){ return c.key!==key; });
+    delete state.draftClasses[key];
+    state.trainBoxes = state.trainBoxes.filter(function(b){ return b.cls!==key; });
+    if(state.activeClass===key){
+      state.activeClass = state.classDefs.length ? state.classDefs[0].key : null;
+    }
+    saveClassDefsToStorage();
+    renderClassButtons();
+    renderClassManageList();
+    renderDensityList();
+    redrawTrainCanvas();
+    updateSampleCounts();
+  }
+
+  trainFileInput.addEventListener("change", function(ev){
+    var file = ev.target.files[0];
+    if(!file) return;
+    var img = new Image();
+    img.onload = function(){
+      state.trainImage = img;
+      var fit = drawToFitCanvas(trainCanvas, img, 640);
+      state.trainCanvasScale = fit.scale;
+      redrawTrainCanvas();
+      setStatus(trainStatus, "โหลดภาพแล้ว — เลือกชนิดแล้ววาดกรอบตัวอย่างสีบนภาพ", false);
+    };
+    var reader = new FileReader();
+    reader.onload = function(e){ img.src = e.target.result; };
+    reader.readAsDataURL(file);
+  });
+
+  // drag-to-draw rectangle
+  var dragging = false, dragStart = null, dragCurrent = null;
+  trainCanvas.addEventListener("mousedown", function(ev){
+    if(!state.trainImage || !state.activeClass) return;
+    dragging = true;
+    var rect = trainCanvas.getBoundingClientRect();
+    var scaleX = trainCanvas.width / rect.width, scaleY = trainCanvas.height / rect.height;
+    dragStart = {x:(ev.clientX-rect.left)*scaleX, y:(ev.clientY-rect.top)*scaleY};
+    dragCurrent = dragStart;
+  });
+  trainCanvas.addEventListener("mousemove", function(ev){
+    if(!dragging) return;
+    var rect = trainCanvas.getBoundingClientRect();
+    var scaleX = trainCanvas.width / rect.width, scaleY = trainCanvas.height / rect.height;
+    dragCurrent = {x:(ev.clientX-rect.left)*scaleX, y:(ev.clientY-rect.top)*scaleY};
+    redrawTrainCanvas();
+    drawBoxOutline(dragStart, dragCurrent, colorOf(state.activeClass));
+  });
+  window.addEventListener("mouseup", function(){
+    if(!dragging) return;
+    dragging = false;
+    if(dragStart && dragCurrent){
+      var x = Math.min(dragStart.x, dragCurrent.x);
+      var y = Math.min(dragStart.y, dragCurrent.y);
+      var w = Math.abs(dragCurrent.x - dragStart.x);
+      var h = Math.abs(dragCurrent.y - dragStart.y);
+      if(w>4 && h>4){
+        var box = {cls:state.activeClass, x:x, y:y, w:w, h:h};
+        state.trainBoxes.push(box);
+        sampleBoxPixels(box);
+        updateSampleCounts();
+      }
+    }
+    redrawTrainCanvas();
+  });
+
+  function drawBoxOutline(p1, p2, color){
+    var ctx = trainCanvas.getContext("2d");
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(Math.min(p1.x,p2.x), Math.min(p1.y,p2.y), Math.abs(p2.x-p1.x), Math.abs(p2.y-p1.y));
+  }
+
+  function redrawTrainCanvas(){
+    if(!state.trainImage) return;
+    var ctx = trainCanvas.getContext("2d");
+    ctx.clearRect(0,0,trainCanvas.width, trainCanvas.height);
+    ctx.drawImage(state.trainImage, 0, 0, trainCanvas.width, trainCanvas.height);
+    state.trainBoxes.forEach(function(b){
+      ctx.strokeStyle = colorOf(b.cls);
+      ctx.lineWidth = 2;
+      ctx.strokeRect(b.x, b.y, b.w, b.h);
+      ctx.fillStyle = colorOf(b.cls);
+      ctx.font = "11px " + getComputedStyle(document.body).fontFamily;
+      ctx.fillText(labelOf(b.cls), b.x+3, Math.max(11,b.y-4));
+    });
+  }
+
+  function sampleBoxPixels(box){
+    // sample directly from the currently drawn (scaled) canvas — colors are unaffected by scale
+    var acc = state.draftClasses[box.cls];
+    if(!acc) return;
+    var ctx = trainCanvas.getContext("2d", {willReadFrequently:true});
+    var x = Math.max(0, Math.round(box.x)), y = Math.max(0, Math.round(box.y));
+    var w = Math.max(1, Math.round(box.w)), h = Math.max(1, Math.round(box.h));
+    w = Math.min(w, trainCanvas.width - x); h = Math.min(h, trainCanvas.height - y);
+    if(w<=0||h<=0) return;
+    var data = ctx.getImageData(x,y,w,h).data;
+    for(var p=0; p<data.length; p+=4){
+      var hsv = rgbToHsv(data[p], data[p+1], data[p+2]);
+      acc.hMin = Math.min(acc.hMin, hsv.h); acc.hMax = Math.max(acc.hMax, hsv.h);
+      acc.sMin = Math.min(acc.sMin, hsv.s); acc.sMax = Math.max(acc.sMax, hsv.s);
+      acc.vMin = Math.min(acc.vMin, hsv.v); acc.vMax = Math.max(acc.vMax, hsv.v);
+      acc.sumH += hsv.h; acc.sumS += hsv.s; acc.sumV += hsv.v;
+      acc.count++;
+    }
+  }
+
+  function updateSampleCounts(){
+    sampleCountsEl.innerHTML = "";
+    state.classDefs.forEach(function(c){
+      var acc = state.draftClasses[c.key] || freshAccumulator();
+      var d1 = document.createElement("div");
+      d1.textContent = c.label;
+      var d2 = document.createElement("div");
+      d2.textContent = acc.count + " px";
+      sampleCountsEl.appendChild(d1); sampleCountsEl.appendChild(d2);
+    });
+  }
+
+  undoBoxBtn.addEventListener("click", function(){
+    if(state.trainBoxes.length===0) return;
+    state.trainBoxes.pop();
+    recomputeDraftFromBoxes();
+    redrawTrainCanvas();
+    updateSampleCounts();
+  });
+  clearBoxesBtn.addEventListener("click", function(){
+    state.trainBoxes = [];
+    recomputeDraftFromBoxes();
+    redrawTrainCanvas();
+    updateSampleCounts();
+  });
+  function recomputeDraftFromBoxes(){
+    initDraftClasses();
+    state.trainBoxes.forEach(function(b){ sampleBoxPixels(b); });
+  }
+
+  existingModelSelect.addEventListener("change", function(){
+    var name = existingModelSelect.value;
+    if(!name){
+      trainModelName.value = "";
+      trainMinArea.value = 25; trainMinAreaOut.textContent = 25;
+      return;
+    }
+    var m = state.models[name];
+    if(!m) return;
+    trainModelName.value = name;
+    trainMinArea.value = m.minAreaPx || 25;
+    trainMinAreaOut.textContent = trainMinArea.value;
+    // seed draft accumulators from existing model ranges so new boxes extend them
+    state.classDefs.forEach(function(c){
+      var rg = m.classes[c.key];
+      var acc = freshAccumulator();
+      if(rg){
+        acc.hMin=rg.hMin; acc.hMax=rg.hMax; acc.sMin=rg.sMin; acc.sMax=rg.sMax; acc.vMin=rg.vMin; acc.vMax=rg.vMax;
+        acc.sumH = rg.meanH*rg.count; acc.sumS = rg.meanS*rg.count; acc.sumV = rg.meanV*rg.count;
+        acc.count = rg.count;
+      }
+      state.draftClasses[c.key] = acc;
+    });
+    state.trainBoxes = [];
+    redrawTrainCanvas();
+    updateSampleCounts();
+    setStatus(trainStatus, 'โหลดโมเดล "'+name+'" มาแล้ว — วาดกรอบเพิ่มเพื่อขยายช่วงสี แล้วกดบันทึก', false);
+  });
+
+  saveModelBtn.addEventListener("click", function(){
+    var name = (trainModelName.value||"").trim();
+    if(!name){
+      setStatus(trainStatus, "กรุณาตั้งชื่อโมเดลก่อนบันทึก", true);
+      return;
+    }
+    var anySamples = state.classDefs.some(function(c){ return (state.draftClasses[c.key]||{count:0}).count>0; });
+    if(!anySamples && !state.models[name]){
+      setStatus(trainStatus, "ยังไม่มีตัวอย่างสีเลย กรุณาวาดกรอบอย่างน้อย 1 ชนิดก่อนบันทึก", true);
+      return;
+    }
+    var newModel = { name:name, builtIn:false, minAreaPx: parseInt(trainMinArea.value,10), updatedAt: new Date().toISOString(), classes:{}, densities:{} };
+    var base = state.models[name] ? state.models[name] : DEFAULT_MODEL;
+    // carry densities over: the model's own values win, otherwise the shared defaults
+    state.classDefs.forEach(function(c){
+      var prev = (base.densities && typeof base.densities[c.key]==="number") ? base.densities[c.key] : classDefDensity(c.key);
+      newModel.densities[c.key] = (isFinite(prev) && prev>0) ? prev : 1.00;
+    });
+    state.classDefs.forEach(function(c){
+      var k = c.key;
+      var acc = state.draftClasses[k];
+      if(acc && acc.count>0){
+        newModel.classes[k] = {
+          hMin:acc.hMin, hMax:acc.hMax, sMin:acc.sMin, sMax:acc.sMax, vMin:acc.vMin, vMax:acc.vMax,
+          meanH: acc.sumH/acc.count, meanS: acc.sumS/acc.count, meanV: acc.sumV/acc.count,
+          count: acc.count
+        };
+      }else if(base.classes[k]){
+        newModel.classes[k] = base.classes[k];
+      }
+    });
+    state.models[name] = newModel;
+    saveModelsToStorage();
+    refreshSavedModelsList();
+    refreshExistingModelSelect();
+    refreshModelSelect();
+    renderDensityList();
+    setStatus(trainStatus, 'บันทึกโมเดล "'+name+'" เรียบร้อย ('+state.classDefs.filter(function(c){return newModel.classes[c.key];}).length+' ชนิด)', false);
+  });
+
+  function refreshExistingModelSelect(){
+    var cur = existingModelSelect.value;
+    existingModelSelect.innerHTML = '<option value="">— เริ่มโมเดลใหม่ —</option>';
+    Object.keys(state.models).forEach(function(name){
+      var opt = document.createElement("option");
+      opt.value = name; opt.textContent = name;
+      existingModelSelect.appendChild(opt);
+    });
+    if(state.models[cur]) existingModelSelect.value = cur;
+  }
+
+  function refreshSavedModelsList(){
+    var names = Object.keys(state.models);
+    if(names.length===0){
+      savedModelsList.innerHTML = '<div class="empty-note">ยังไม่มีโมเดลที่บันทึกไว้</div>';
+      return;
+    }
+    names.sort(function(a,b){ return new Date(state.models[b].updatedAt||0)-new Date(state.models[a].updatedAt||0); });
+    savedModelsList.innerHTML = "";
+    names.forEach(function(name){
+      var m = state.models[name];
+      var classCount = state.classDefs.filter(function(c){return m.classes[c.key];}).length;
+      var row = document.createElement("div");
+      row.className = "model-row";
+      row.innerHTML =
+        '<div><div class="name">'+xmlEscape(name)+'</div>'+
+        '<div class="meta">'+classCount+' ชนิด · แก้ไขล่าสุด '+(m.updatedAt? new Date(m.updatedAt).toLocaleString("th-TH"):"—")+'</div></div>'+
+        '<div class="actions"><button class="btn secondary small" data-action="delete" data-name="'+xmlEscape(name)+'">ลบ</button></div>';
+      savedModelsList.appendChild(row);
+    });
+  }
+  savedModelsList.addEventListener("click", function(ev){
+    var btn = ev.target.closest("button[data-action=delete]");
+    if(!btn) return;
+    var name = btn.getAttribute("data-name");
+    if(confirm('ลบโมเดล "'+name+'" ใช่หรือไม่?')){
+      delete state.models[name];
+      saveModelsToStorage();
+      refreshSavedModelsList();
+      refreshExistingModelSelect();
+      refreshModelSelect();
+    }
+  });
+
+  exportModelsBtn.addEventListener("click", function(){
+    downloadFile(JSON.stringify(state.models, null, 2), "ingredient-models-"+timestampStr()+".json", "application/json");
+  });
+  importModelsInput.addEventListener("change", function(ev){
+    var file = ev.target.files[0];
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e){
+      try{
+        var imported = JSON.parse(e.target.result);
+        Object.keys(imported).forEach(function(name){ state.models[name] = imported[name]; });
+        saveModelsToStorage();
+        refreshSavedModelsList();
+        refreshExistingModelSelect();
+        refreshModelSelect();
+        setStatus(trainStatus, "นำเข้าโมเดลเรียบร้อย", false);
+      }catch(err){
+        setStatus(trainStatus, "ไฟล์ไม่ถูกต้อง: " + err.message, true);
+      }
+    };
+    reader.readAsText(file);
+    importModelsInput.value = "";
+  });
+
+  // ---------------------------------------------------------------
+  // init
+  // ---------------------------------------------------------------
+  loadClassDefsFromStorage();
+  state.activeClass = state.classDefs.length ? state.classDefs[0].key : null;
+  initDraftClasses();
+  renderClassButtons();
+  renderClassManageList();
+  renderDensityList();
+  updateSampleCounts();
+
+  loadModelsFromStorage();
+  refreshModelSelect();
+  refreshExistingModelSelect();
+  refreshSavedModelsList();
+  // the selector now has a model chosen, so densities are read from it
+  minAreaOverride.value = getModelByKey(modelSelect.value).minAreaPx || 25;
+  minAreaOverrideOut.textContent = minAreaOverride.value;
+  renderDensityList();
+
+})();
+</script>
+</body>
+</html>
